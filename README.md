@@ -30,10 +30,10 @@ One script. No manual configuration. Just run it and go.
 ~/.scripts/shell/zsh-config.sh
 ```
 
-After running, apply changes with:
-```bash
-exec zsh
-```
+After running:
+1. Run `exec zsh` to apply changes
+2. Run `p10k configure` to customize your prompt (first time only)
+3. Set Ghostty as your default terminal (optional)
 
 ## What It Installs
 
@@ -111,14 +111,6 @@ Creates a `p10k` profile with Meslo fonts if Konsole is detected.
 - **Error handling**: Tracks and reports failures
 - **Color-coded output**: Easy to read progress and summary
 - **Cleanup**: Removes temporary `.bak` files after sed operations
-
-## Post-Install
-
-After running the script for the first time, you may want to:
-
-1. Run `p10k configure` to customize your Powerlevel10k prompt
-2. Restart your terminal or run `exec zsh` to apply changes
-3. Set Ghostty as your default terminal (if desired)
 
 ## Ghostty Installation
 
