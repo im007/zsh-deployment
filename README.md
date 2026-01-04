@@ -6,7 +6,9 @@ Idempotent - skips what's already installed, so you can re-run it to pick up new
 
 ## Why Use This?
 
-Go from a bare terminal to a fully-featured, beautiful shell environment in under 5 minutes. This script gives you:
+**Go from a bare terminal to a fully-featured, beautiful shell environment in under 5 minutes.**
+
+This script gives you:
 
 - **Instant prompt** - Powerlevel10k displays immediately while background processes load
 - **Smart autocompletion** - Suggestions based on your command history as you type
