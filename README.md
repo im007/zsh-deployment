@@ -1,6 +1,8 @@
 # Zsh Configuration Script
 
-Automated setup for Zsh with Oh My Zsh, Powerlevel10k, and useful tools. Idempotent - safe to run multiple times.
+Automated setup for Zsh with Oh My Zsh, Powerlevel10k, and useful tools.
+
+Idempotent - skips what's already installed, so you can re-run it to pick up new additions.
 
 ## Why Use This?
 
@@ -12,6 +14,7 @@ Go from a bare terminal to a fully-featured, beautiful shell environment in unde
 - **Smarter navigation** - `cd` learns your most-used directories and jumps to them with partial matches
 - **Typo correction** - Made a mistake? Type `fuck` and it fixes your last command
 - **Better file viewing** - `cat` now has syntax highlighting courtesy of bat
+  - Tip: `cat -p` for plain output (closer to traditional cat)
 - **Fuzzy finding** - `Ctrl+R` for history, `Ctrl+T` for files, `Alt+C` for directories
 - **Fast file search** - `fd` is a modern, user-friendly alternative to `find`
 - **Beautiful terminal** - Ghostty with a sleek dark theme and proper font rendering
