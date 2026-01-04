@@ -54,11 +54,11 @@ exec zsh
 
 ## Supported Platforms
 
-| Platform | Package Manager | Ghostty Source |
-|----------|-----------------|----------------|
-| macOS | Homebrew | `brew install --cask ghostty` |
-| Ubuntu/Debian | apt | [mkasberg/ghostty-ubuntu](https://github.com/mkasberg/ghostty-ubuntu) |
-| Fedora | dnf | [COPR pgdev/ghostty](https://copr.fedorainfracloud.org/coprs/pgdev/ghostty) |
+| Platform | Package Manager |
+|----------|-----------------|
+| macOS | Homebrew |
+| Ubuntu/Debian | apt |
+| Fedora | dnf |
 
 ## What It Configures
 
@@ -119,3 +119,7 @@ After running the script for the first time, you may want to:
 1. Run `p10k configure` to customize your Powerlevel10k prompt
 2. Restart your terminal or run `exec zsh` to apply changes
 3. Set Ghostty as your default terminal (if desired)
+
+## Ghostty Installation
+
+For platforms not listed above or alternative installation methods, see the official Ghostty docs: [ghostty.org/docs/install/binary](https://ghostty.org/docs/install/binary)
