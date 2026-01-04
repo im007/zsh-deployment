@@ -287,6 +287,52 @@ else
   SKIPPED+=("thefuck")
 fi
 
+# fd (find replacement)
+# Note: package name varies by OS
+if ! command -v fd &> /dev/null && ! command -v fdfind &> /dev/null; then
+  log_info "Installing fd..."
+  case $OS in
+    "ubuntu"|"debian")
+      install_package fd-find
+      ;;
+    *)
+      install_package fd
+      ;;
+  esac
+  INSTALLED+=("fd")
+else
+  log_skip "fd already installed"
+  SKIPPED+=("fd")
+fi
+
+# bat (cat replacement)
+# Note: package name varies by OS
+if ! command -v bat &> /dev/null && ! command -v batcat &> /dev/null; then
+  log_info "Installing bat..."
+  case $OS in
+    "ubuntu"|"debian")
+      install_package bat
+      ;;
+    *)
+      install_package bat
+      ;;
+  esac
+  INSTALLED+=("bat")
+else
+  log_skip "bat already installed"
+  SKIPPED+=("bat")
+fi
+
+# fzf (fuzzy finder)
+if ! command -v fzf &> /dev/null; then
+  log_info "Installing fzf..."
+  install_package fzf
+  INSTALLED+=("fzf")
+else
+  log_skip "fzf already installed"
+  SKIPPED+=("fzf")
+fi
+
 # -----------------------------------------------------------------------------
 log_section "Installing Ghostty Terminal"
 # -----------------------------------------------------------------------------
@@ -442,6 +488,50 @@ if ! grep -q 'thefuck --alias' ~/.zshrc; then
   CONFIGURED+=("thefuck alias")
 else
   log_skip "thefuck alias already configured"
+fi
+
+# fzf init
+if ! grep -q 'fzf --zsh' ~/.zshrc && ! grep -q 'fzf.zsh' ~/.zshrc; then
+  log_info "Adding fzf initialization..."
+  echo "" >> ~/.zshrc
+  echo "# fzf" >> ~/.zshrc
+  echo 'if command -v fzf &> /dev/null; then' >> ~/.zshrc
+  echo '  eval "$(fzf --zsh)"' >> ~/.zshrc
+  echo 'fi' >> ~/.zshrc
+  CONFIGURED+=("fzf init")
+else
+  log_skip "fzf init already configured"
+fi
+
+# bat alias (cat replacement)
+# On Ubuntu/Debian, bat is installed as 'batcat'
+if ! grep -q 'alias cat=' ~/.zshrc; then
+  log_info "Adding bat alias (cat replacement)..."
+  echo "" >> ~/.zshrc
+  echo "# bat (cat replacement)" >> ~/.zshrc
+  echo 'if command -v bat &> /dev/null; then' >> ~/.zshrc
+  echo '  alias cat="bat --paging=never"' >> ~/.zshrc
+  echo '  alias catp="bat"' >> ~/.zshrc
+  echo 'elif command -v batcat &> /dev/null; then' >> ~/.zshrc
+  echo '  alias cat="batcat --paging=never"' >> ~/.zshrc
+  echo '  alias catp="batcat"' >> ~/.zshrc
+  echo 'fi' >> ~/.zshrc
+  CONFIGURED+=("alias cat → bat")
+else
+  log_skip "cat alias already configured"
+fi
+
+# fd alias (on Ubuntu/Debian it's 'fdfind')
+if ! grep -q 'alias fd=' ~/.zshrc; then
+  log_info "Adding fd alias..."
+  echo "" >> ~/.zshrc
+  echo "# fd (on Ubuntu/Debian it's fdfind)" >> ~/.zshrc
+  echo 'if ! command -v fd &> /dev/null && command -v fdfind &> /dev/null; then' >> ~/.zshrc
+  echo '  alias fd="fdfind"' >> ~/.zshrc
+  echo 'fi' >> ~/.zshrc
+  CONFIGURED+=("alias fd")
+else
+  log_skip "fd alias already configured"
 fi
 
 # Custom aliases
