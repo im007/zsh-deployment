@@ -25,9 +25,12 @@ This script gives you:
 One script. No manual configuration. Just run it and go.
 
 ## Usage
-
+To install, run:
 ```bash
-~/.scripts/shell/zsh-config.sh
+git clone https://github.com/im007/zsh-deployment.git
+cd zsh-deployment
+chmod +x zsh-config.sh
+./zsh-config.sh
 ```
 
 After running:
