@@ -144,8 +144,120 @@ detect_os
 log_info "Detected OS: $OS"
 
 # -----------------------------------------------------------------------------
+log_section "Checking Network Connectivity"
+# -----------------------------------------------------------------------------
+
+check_network() {
+  log_info "Checking internet connectivity..."
+  if ! curl -s --head --connect-timeout 5 https://github.com > /dev/null; then
+    log_error "No internet connection detected"
+    log_error "This script requires internet access to download packages"
+    exit 1
+  fi
+  log_success "Internet connectivity confirmed"
+}
+
+check_network
+
+# -----------------------------------------------------------------------------
+log_section "Installing Xcode Command Line Tools (macOS)"
+# -----------------------------------------------------------------------------
+
+install_xcode_clt() {
+  if [ "$OS" != "macos" ]; then
+    return 0
+  fi
+
+  # Check if CLT is already installed
+  if xcode-select -p &> /dev/null; then
+    log_skip "Xcode Command Line Tools already installed"
+    SKIPPED+=("Xcode CLT")
+    return 0
+  fi
+
+  log_info "Installing Xcode Command Line Tools..."
+  log_info "This may take several minutes..."
+
+  # Touch the file that triggers the softwareupdate mechanism
+  touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+
+  # Find the CLT package name
+  CLT_PACKAGE=$(softwareupdate -l 2>/dev/null | grep -o "Command Line Tools for Xcode-[0-9.]*" | head -n 1)
+
+  if [ -z "$CLT_PACKAGE" ]; then
+    # Fallback: try alternative pattern
+    CLT_PACKAGE=$(softwareupdate -l 2>/dev/null | grep "\*.*Command Line" | head -n 1 | awk -F"*" '{print $2}' | sed -e 's/^ *//' | tr -d '\n')
+  fi
+
+  if [ -z "$CLT_PACKAGE" ]; then
+    log_error "Could not find Command Line Tools package"
+    log_info "Please install manually: xcode-select --install"
+    rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+    FAILED+=("Xcode CLT")
+    return 1
+  fi
+
+  # Install the CLT package
+  if softwareupdate -i "$CLT_PACKAGE" --verbose; then
+    log_success "Xcode Command Line Tools installed"
+    INSTALLED+=("Xcode CLT")
+  else
+    log_error "Failed to install Xcode Command Line Tools"
+    log_info "Please install manually: xcode-select --install"
+    FAILED+=("Xcode CLT")
+    rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+    return 1
+  fi
+
+  rm -f /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
+}
+
+install_xcode_clt
+
+# -----------------------------------------------------------------------------
 log_section "Installing Core Packages"
 # -----------------------------------------------------------------------------
+
+# Homebrew (macOS only - required for other package installations)
+if [ "$OS" = "macos" ]; then
+  if ! command -v brew &> /dev/null; then
+    log_info "Installing Homebrew..."
+    log_info "This may take several minutes..."
+
+    # Use NONINTERACTIVE to avoid prompts
+    if NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
+      # Add Homebrew to PATH for this session
+      if [[ -f "/opt/homebrew/bin/brew" ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+      elif [[ -f "/usr/local/bin/brew" ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+      fi
+
+      # Verify Homebrew is now available
+      if command -v brew &> /dev/null; then
+        log_success "Homebrew installed successfully"
+        INSTALLED+=("Homebrew")
+      else
+        log_error "Homebrew installed but not found in PATH"
+        log_error "Cannot continue without Homebrew on macOS"
+        exit 1
+      fi
+    else
+      log_error "Homebrew installation failed"
+      log_error "Cannot continue without Homebrew on macOS"
+      exit 1
+    fi
+  else
+    log_skip "Homebrew already installed"
+    SKIPPED+=("Homebrew")
+    # Ensure brew is in PATH for this session
+    if [[ -f "/opt/homebrew/bin/brew" ]]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -f "/usr/local/bin/brew" ]]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
+  fi
+fi
 
 # Git
 if ! command -v git &> /dev/null; then
@@ -201,6 +313,39 @@ log_section "Installing Fonts"
 # -----------------------------------------------------------------------------
 
 install_fonts
+
+# -----------------------------------------------------------------------------
+log_section "Configuring macOS Terminal Font"
+# -----------------------------------------------------------------------------
+
+configure_macos_terminal_font() {
+  if [ "$OS" != "macos" ]; then
+    return 0
+  fi
+
+  log_info "Configuring Terminal.app to use MesloLGS NF font..."
+
+  # Use osascript to configure Terminal.app default profile font
+  # This sets the font for the "Basic" profile which is the default
+  osascript <<'APPLESCRIPT'
+tell application "Terminal"
+    set defaultSettings to default settings
+    set font name of defaultSettings to "MesloLGS NF"
+    set font size of defaultSettings to 12
+end tell
+APPLESCRIPT
+
+  if [ $? -eq 0 ]; then
+    log_success "Terminal.app font configured to MesloLGS NF"
+    CONFIGURED+=("Terminal.app font → MesloLGS NF")
+  else
+    log_error "Failed to configure Terminal.app font"
+    log_info "You can manually set the font in Terminal > Preferences > Profiles > Font"
+    FAILED+=("Terminal.app font configuration")
+  fi
+}
+
+configure_macos_terminal_font
 
 # -----------------------------------------------------------------------------
 log_section "Installing Powerlevel10k Theme"
