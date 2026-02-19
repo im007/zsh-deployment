@@ -53,6 +53,9 @@ After running:
 | fd | Fast, user-friendly `find` replacement | [GitHub](https://github.com/sharkdp/fd) |
 | bat | `cat` with syntax highlighting | [GitHub](https://github.com/sharkdp/bat) |
 | fzf | Fuzzy finder for files, history, and more | [GitHub](https://github.com/junegunn/fzf) |
+| jq | Lightweight JSON processor | [GitHub](https://github.com/jqlang/jq) |
+| tree | Directory listing in tree format | [GitHub](https://github.com/Old-Man-Programmer/tree) |
+| ShellCheck | Shell script static analysis tool | [GitHub](https://github.com/koalaman/shellcheck) |
 | Ghostty | Fast, GPU-accelerated terminal | [ghostty.org](https://ghostty.org/) |
 
 ## Supported Platforms
@@ -72,6 +75,9 @@ After running:
 - Initializes thefuck
 - Initializes fzf keybindings and completion
 - Aliases `cat` to `bat` for syntax-highlighted file viewing
+- Sets `HIST_STAMPS` for history timestamps (epoch + ISO date + time with timezone)
+- Removes Oh My Zsh git aliases that conflict with GAM (Google Workspace Admin)
+- Adds GAM alias if GAMADV-XTD3 is installed in `~/bin/gamadv-xtd3`
 - Adds Homebrew to PATH (macOS)
 - Adds `~/.local/bin` to PATH
 
@@ -97,6 +103,7 @@ Creates a `p10k` profile with Meslo fonts if Konsole is detected.
 | `pip` | `python3 -m pip` | All |
 | `python` | `python3` | All |
 | `ip` | `ifconfig` | macOS |
+| `gam` | `$HOME/bin/gamadv-xtd3/gam` | All (if installed) |
 
 *On Ubuntu/Debian, `fd` is packaged as `fd-find` and the binary is `fdfind`. The alias normalizes this.
 

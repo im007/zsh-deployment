@@ -478,6 +478,36 @@ else
   SKIPPED+=("fzf")
 fi
 
+# jq (JSON processor)
+if ! command -v jq &> /dev/null; then
+  log_info "Installing jq..."
+  install_package jq
+  INSTALLED+=("jq")
+else
+  log_skip "jq already installed"
+  SKIPPED+=("jq")
+fi
+
+# tree (directory tree viewer)
+if ! command -v tree &> /dev/null; then
+  log_info "Installing tree..."
+  install_package tree
+  INSTALLED+=("tree")
+else
+  log_skip "tree already installed"
+  SKIPPED+=("tree")
+fi
+
+# shellcheck (shell script linter)
+if ! command -v shellcheck &> /dev/null; then
+  log_info "Installing shellcheck..."
+  install_package shellcheck
+  INSTALLED+=("shellcheck")
+else
+  log_skip "shellcheck already installed"
+  SKIPPED+=("shellcheck")
+fi
+
 # -----------------------------------------------------------------------------
 log_section "Installing Ghostty Terminal"
 # -----------------------------------------------------------------------------
@@ -596,6 +626,15 @@ configure_ghostty
 log_section "Configuring .zshrc"
 # -----------------------------------------------------------------------------
 
+# History timestamp format (epoch, ISO date, time with timezone)
+if ! grep -q 'HIST_STAMPS=' ~/.zshrc; then
+  log_info "Adding history timestamp format..."
+  sed -i.bak 's/# HIST_STAMPS="mm\/dd\/yyyy"/HIST_STAMPS="%s %F %R-%Z "/' ~/.zshrc
+  CONFIGURED+=("HIST_STAMPS → epoch + ISO date + time")
+else
+  log_skip "HIST_STAMPS already configured"
+fi
+
 # Homebrew configuration (macOS)
 if [ "$OS" = "macos" ]; then
   if ! grep -q 'eval "\$(/opt/homebrew/bin/brew shellenv)"' ~/.zshrc; then
@@ -707,6 +746,31 @@ if [ "$OS" = "macos" ]; then
   else
     log_skip "ip alias already configured"
   fi
+fi
+
+# GAM (Google Workspace Admin) - remove conflicting Oh My Zsh git aliases
+if ! grep -q 'unalias gam' ~/.zshrc; then
+  log_info "Adding GAM alias conflict resolution..."
+  echo "" >> ~/.zshrc
+  echo "# Remove git am aliases that conflict with GAM (Google Workspace Admin)" >> ~/.zshrc
+  echo 'unalias gam gama gamc gams gamscp 2>/dev/null' >> ~/.zshrc
+  CONFIGURED+=("GAM alias conflict resolution")
+else
+  log_skip "GAM alias conflict resolution already configured"
+fi
+
+# GAM alias (GAMADV-XTD3)
+if ! grep -q 'alias gam=' ~/.zshrc; then
+  if [ -d "$HOME/bin/gamadv-xtd3" ]; then
+    log_info "Adding GAM alias..."
+    echo "" >> ~/.zshrc
+    echo 'alias gam="$HOME/bin/gamadv-xtd3/gam"' >> ~/.zshrc
+    CONFIGURED+=("alias gam → GAMADV-XTD3")
+  else
+    log_skip "GAMADV-XTD3 not found in ~/bin/gamadv-xtd3 — skipping alias"
+  fi
+else
+  log_skip "GAM alias already configured"
 fi
 
 # PATH configuration
