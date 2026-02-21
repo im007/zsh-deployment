@@ -62,14 +62,14 @@ install_package() {
   package_name=$1
   case $OS in
     "fedora")
-      sudo dnf install -y $package_name
+      sudo dnf install -y "$package_name"
       ;;
     "ubuntu")
       sudo apt-get update
-      sudo apt-get install -y $package_name
+      sudo apt-get install -y "$package_name"
       ;;
     "macos")
-      brew install $package_name
+      brew install "$package_name"
       ;;
   esac
 }
@@ -284,7 +284,7 @@ if [ "$SHELL" != "$(which zsh)" ]; then
   case $OS in
     "fedora"|"ubuntu")
       log_info "Setting Zsh as default shell..."
-      chsh -s $(which zsh)
+      chsh -s "$(which zsh)"
       CONFIGURED+=("Default shell → Zsh")
       ;;
     "macos")
@@ -327,15 +327,14 @@ configure_macos_terminal_font() {
 
   # Use osascript to configure Terminal.app default profile font
   # This sets the font for the "Basic" profile which is the default
-  osascript <<'APPLESCRIPT'
+  if osascript <<'APPLESCRIPT'
 tell application "Terminal"
     set defaultSettings to default settings
     set font name of defaultSettings to "MesloLGS NF"
     set font size of defaultSettings to 12
 end tell
 APPLESCRIPT
-
-  if [ $? -eq 0 ]; then
+  then
     log_success "Terminal.app font configured to MesloLGS NF"
     CONFIGURED+=("Terminal.app font → MesloLGS NF")
   else
@@ -353,7 +352,7 @@ log_section "Installing Powerlevel10k Theme"
 
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]; then
   log_info "Installing Powerlevel10k..."
-  if git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k; then
+  if git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/themes/powerlevel10k; then
     INSTALLED+=("Powerlevel10k theme")
   else
     log_error "Failed to clone Powerlevel10k"
@@ -377,7 +376,7 @@ log_section "Installing Zsh Plugins"
 # zsh-autosuggestions
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
   log_info "Installing zsh-autosuggestions..."
-  if git clone https://github.com/zsh-users/zsh-autosuggestions.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions; then
+  if git clone https://github.com/zsh-users/zsh-autosuggestions.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/plugins/zsh-autosuggestions; then
     INSTALLED+=("zsh-autosuggestions")
   else
     log_error "Failed to clone zsh-autosuggestions"
@@ -391,7 +390,7 @@ fi
 # zsh-syntax-highlighting
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]; then
   log_info "Installing zsh-syntax-highlighting..."
-  if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting; then
+  if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/plugins/zsh-syntax-highlighting; then
     INSTALLED+=("zsh-syntax-highlighting")
   else
     log_error "Failed to clone zsh-syntax-highlighting"
@@ -498,7 +497,7 @@ else
   SKIPPED+=("tree")
 fi
 
-# shellcheck (shell script linter)
+# ShellCheck (shell script linter)
 if ! command -v shellcheck &> /dev/null; then
   log_info "Installing shellcheck..."
   install_package shellcheck
@@ -759,6 +758,20 @@ else
   log_skip "GAM alias conflict resolution already configured"
 fi
 
+# GAM alias (GAMADV-XTD3)
+if ! grep -q 'alias gam=' ~/.zshrc; then
+  if [ -d "$HOME/bin/gamadv-xtd3" ]; then
+    log_info "Adding GAM alias..."
+    echo "" >> ~/.zshrc
+    echo 'alias gam="$HOME/bin/gamadv-xtd3/gam"' >> ~/.zshrc
+    CONFIGURED+=("alias gam → GAMADV-XTD3")
+  else
+    log_skip "GAMADV-XTD3 not found in ~/bin/gamadv-xtd3 — skipping alias"
+  fi
+else
+  log_skip "GAM alias already configured"
+fi
+
 # PATH configuration
 if ! grep -q '\.local/bin' ~/.zshrc; then
   log_info "Adding ~/.local/bin to PATH..."
@@ -766,7 +779,7 @@ if ! grep -q '\.local/bin' ~/.zshrc; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
   CONFIGURED+=("PATH += ~/.local/bin")
 else
-  log_skip "~/.local/bin already in PATH"
+  log_skip "$HOME/.local/bin already in PATH"
 fi
 
 # -----------------------------------------------------------------------------
