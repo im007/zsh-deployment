@@ -77,7 +77,6 @@ After running:
 - Aliases `cat` to `bat` for syntax-highlighted file viewing
 - Sets `HIST_STAMPS` for history timestamps (epoch + ISO date + time with timezone)
 - Removes Oh My Zsh git aliases that conflict with GAM (Google Workspace Admin)
-- Adds GAM alias if GAMADV-XTD3 is installed in `~/bin/gamadv-xtd3`
 - Adds Homebrew to PATH (macOS)
 - Adds `~/.local/bin` to PATH
 
@@ -103,7 +102,6 @@ Creates a `p10k` profile with Meslo fonts if Konsole is detected.
 | `pip` | `python3 -m pip` | All |
 | `python` | `python3` | All |
 | `ip` | `ifconfig` | macOS |
-| `gam` | `$HOME/bin/gamadv-xtd3/gam` | All (if installed) |
 
 *On Ubuntu/Debian, `fd` is packaged as `fd-find` and the binary is `fdfind`. The alias normalizes this.
 

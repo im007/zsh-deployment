@@ -759,20 +759,6 @@ else
   log_skip "GAM alias conflict resolution already configured"
 fi
 
-# GAM alias (GAMADV-XTD3)
-if ! grep -q 'alias gam=' ~/.zshrc; then
-  if [ -d "$HOME/bin/gamadv-xtd3" ]; then
-    log_info "Adding GAM alias..."
-    echo "" >> ~/.zshrc
-    echo 'alias gam="$HOME/bin/gamadv-xtd3/gam"' >> ~/.zshrc
-    CONFIGURED+=("alias gam → GAMADV-XTD3")
-  else
-    log_skip "GAMADV-XTD3 not found in ~/bin/gamadv-xtd3 — skipping alias"
-  fi
-else
-  log_skip "GAM alias already configured"
-fi
-
 # PATH configuration
 if ! grep -q '\.local/bin' ~/.zshrc; then
   log_info "Adding ~/.local/bin to PATH..."
