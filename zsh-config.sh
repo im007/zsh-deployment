@@ -18,6 +18,16 @@ SKIPPED=()
 CONFIGURED=()
 FAILED=()
 
+# Options
+ENABLE_GAM=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --gam) ENABLE_GAM=true; shift ;;
+    *) echo "Unknown option: $1" >&2; exit 1 ;;
+  esac
+done
+
 # Logging functions
 log_info() {
   echo -e "${BLUE}[INFO]${NC} $1"
@@ -62,14 +72,14 @@ install_package() {
   package_name=$1
   case $OS in
     "fedora")
-      sudo dnf install -y $package_name
+      sudo dnf install -y "$package_name"
       ;;
     "ubuntu")
       sudo apt-get update
-      sudo apt-get install -y $package_name
+      sudo apt-get install -y "$package_name"
       ;;
     "macos")
-      brew install $package_name
+      brew install "$package_name"
       ;;
   esac
 }
@@ -284,7 +294,7 @@ if [ "$SHELL" != "$(which zsh)" ]; then
   case $OS in
     "fedora"|"ubuntu")
       log_info "Setting Zsh as default shell..."
-      chsh -s $(which zsh)
+      chsh -s "$(which zsh)"
       CONFIGURED+=("Default shell → Zsh")
       ;;
     "macos")
@@ -327,15 +337,14 @@ configure_macos_terminal_font() {
 
   # Use osascript to configure Terminal.app default profile font
   # This sets the font for the "Basic" profile which is the default
-  osascript <<'APPLESCRIPT'
+  if osascript <<'APPLESCRIPT'
 tell application "Terminal"
     set defaultSettings to default settings
     set font name of defaultSettings to "MesloLGS NF"
     set font size of defaultSettings to 12
 end tell
 APPLESCRIPT
-
-  if [ $? -eq 0 ]; then
+  then
     log_success "Terminal.app font configured to MesloLGS NF"
     CONFIGURED+=("Terminal.app font → MesloLGS NF")
   else
@@ -353,7 +362,7 @@ log_section "Installing Powerlevel10k Theme"
 
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]; then
   log_info "Installing Powerlevel10k..."
-  if git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k; then
+  if git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/themes/powerlevel10k; then
     INSTALLED+=("Powerlevel10k theme")
   else
     log_error "Failed to clone Powerlevel10k"
@@ -377,7 +386,7 @@ log_section "Installing Zsh Plugins"
 # zsh-autosuggestions
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
   log_info "Installing zsh-autosuggestions..."
-  if git clone https://github.com/zsh-users/zsh-autosuggestions.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions; then
+  if git clone https://github.com/zsh-users/zsh-autosuggestions.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/plugins/zsh-autosuggestions; then
     INSTALLED+=("zsh-autosuggestions")
   else
     log_error "Failed to clone zsh-autosuggestions"
@@ -391,7 +400,7 @@ fi
 # zsh-syntax-highlighting
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]; then
   log_info "Installing zsh-syntax-highlighting..."
-  if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting; then
+  if git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"/plugins/zsh-syntax-highlighting; then
     INSTALLED+=("zsh-syntax-highlighting")
   else
     log_error "Failed to clone zsh-syntax-highlighting"
@@ -476,6 +485,36 @@ if ! command -v fzf &> /dev/null; then
 else
   log_skip "fzf already installed"
   SKIPPED+=("fzf")
+fi
+
+# jq (JSON processor)
+if ! command -v jq &> /dev/null; then
+  log_info "Installing jq..."
+  install_package jq
+  INSTALLED+=("jq")
+else
+  log_skip "jq already installed"
+  SKIPPED+=("jq")
+fi
+
+# tree (directory tree viewer)
+if ! command -v tree &> /dev/null; then
+  log_info "Installing tree..."
+  install_package tree
+  INSTALLED+=("tree")
+else
+  log_skip "tree already installed"
+  SKIPPED+=("tree")
+fi
+
+# ShellCheck (shell script linter)
+if ! command -v shellcheck &> /dev/null; then
+  log_info "Installing shellcheck..."
+  install_package shellcheck
+  INSTALLED+=("shellcheck")
+else
+  log_skip "shellcheck already installed"
+  SKIPPED+=("shellcheck")
 fi
 
 # -----------------------------------------------------------------------------
@@ -596,6 +635,15 @@ configure_ghostty
 log_section "Configuring .zshrc"
 # -----------------------------------------------------------------------------
 
+# History timestamp format (epoch, ISO date, time with timezone)
+if ! grep -q 'HIST_STAMPS=' ~/.zshrc; then
+  log_info "Adding history timestamp format..."
+  sed -i.bak 's/# HIST_STAMPS="mm\/dd\/yyyy"/HIST_STAMPS="%s %F %R-%Z "/' ~/.zshrc
+  CONFIGURED+=("HIST_STAMPS → epoch + ISO date + time")
+else
+  log_skip "HIST_STAMPS already configured"
+fi
+
 # Homebrew configuration (macOS)
 if [ "$OS" = "macos" ]; then
   if ! grep -q 'eval "\$(/opt/homebrew/bin/brew shellenv)"' ~/.zshrc; then
@@ -709,6 +757,33 @@ if [ "$OS" = "macos" ]; then
   fi
 fi
 
+# GAM (Google Workspace Admin) - only when --gam flag is passed
+if [ "$ENABLE_GAM" = true ]; then
+  # Remove conflicting Oh My Zsh git aliases
+  if ! grep -q 'unalias gam' ~/.zshrc; then
+    log_info "Adding GAM alias conflict resolution..."
+    echo "" >> ~/.zshrc
+    echo "# Remove git am aliases that conflict with GAM (Google Workspace Admin)" >> ~/.zshrc
+    echo 'unalias gam gama gamc gams gamscp 2>/dev/null' >> ~/.zshrc
+    CONFIGURED+=("GAM alias conflict resolution")
+  else
+    log_skip "GAM alias conflict resolution already configured"
+  fi
+
+  # GAM alias (GAMADV-XTD3)
+  if ! grep -q 'alias gam=' ~/.zshrc; then
+    log_info "Adding GAM alias..."
+    echo "" >> ~/.zshrc
+    echo 'alias gam="$HOME/bin/gamadv-xtd3/gam"' >> ~/.zshrc
+    CONFIGURED+=("alias gam → GAMADV-XTD3")
+    if [ ! -d "$HOME/bin/gamadv-xtd3" ]; then
+      log_info "GAMADV-XTD3 not found yet — alias will work once installed in ~/bin/gamadv-xtd3"
+    fi
+  else
+    log_skip "GAM alias already configured"
+  fi
+fi
+
 # PATH configuration
 if ! grep -q '\.local/bin' ~/.zshrc; then
   log_info "Adding ~/.local/bin to PATH..."
@@ -716,7 +791,7 @@ if ! grep -q '\.local/bin' ~/.zshrc; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
   CONFIGURED+=("PATH += ~/.local/bin")
 else
-  log_skip "~/.local/bin already in PATH"
+  log_skip "$HOME/.local/bin already in PATH"
 fi
 
 # -----------------------------------------------------------------------------
