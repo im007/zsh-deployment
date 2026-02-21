@@ -2,30 +2,26 @@
 
 Automated setup for Zsh with Oh My Zsh, Powerlevel10k, and useful tools.
 
-Idempotent - skips what's already installed, so you can re-run it to pick up new additions.
+Idempotent — skips what's already installed, so you can re-run it to pick up new additions.
 
-## Why Use This?
+## What You Get
 
 **Go from a bare terminal to a fully-featured, beautiful shell environment in under 5 minutes.**
 
-This script gives you:
-
-- **Instant prompt** - Powerlevel10k displays immediately while background processes load
-- **Smart autocompletion** - Suggestions based on your command history as you type
-- **Syntax highlighting** - See command errors before you hit enter
-- **Smarter navigation** - `cd` learns your most-used directories and jumps to them with partial matches
-- **Typo correction** - Made a mistake? Type `fuck` and it fixes your last command
-- **Better file viewing** - `cat` now has syntax highlighting courtesy of bat
+- **Instant prompt** — Powerlevel10k displays immediately while background processes load
+- **Smart autocompletion** — Suggestions based on your command history as you type
+- **Syntax highlighting** — See command errors before you hit enter
+- **Smarter navigation** — `cd` learns your most-used directories and jumps to them with partial matches
+- **Typo correction** — Made a mistake? Type `fuck` and it fixes your last command
+- **Better file viewing** — `cat` now has syntax highlighting courtesy of bat
   - Tip: `cat -p` for plain output (closer to traditional cat)
-- **Fuzzy finding** - `Ctrl+R` for history, `Ctrl+T` for files, `Alt+C` for directories
-- **Fast file search** - `fd` is a modern, user-friendly alternative to `find`
-- **Beautiful terminal** - Ghostty with a sleek dark theme and proper font rendering
-- **Cross-platform** - Works on macOS, Ubuntu, Debian, and Fedora with OS-appropriate installers
+- **Fuzzy finding** — `Ctrl+R` for history, `Ctrl+T` for files, `Alt+C` for directories
+- **Fast file search** — `fd` is a modern, user-friendly alternative to `find`
+- **Beautiful terminal** — Ghostty with a sleek dark theme and proper font rendering
+- **Cross-platform** — Works on macOS, Ubuntu, Debian, and Fedora with OS-appropriate installers
 
-One script. No manual configuration. Just run it and go.
+## Quick Start
 
-## Usage
-To install, run:
 ```bash
 git clone https://github.com/im007/zsh-deployment.git
 cd zsh-deployment
@@ -34,9 +30,18 @@ chmod +x zsh-config.sh
 ```
 
 After running:
+
 1. Run `exec zsh` to apply changes
 2. Run `p10k configure` to customize your prompt (first time only)
 3. Set Ghostty as your default terminal (optional)
+
+## Supported Platforms
+
+| Platform | Package Manager |
+|----------|-----------------|
+| macOS | Homebrew |
+| Ubuntu/Debian | apt |
+| Fedora | dnf |
 
 ## What It Installs
 
@@ -58,42 +63,20 @@ After running:
 | ShellCheck | Shell script static analysis tool | [GitHub](https://github.com/koalaman/shellcheck) |
 | Ghostty | Fast, GPU-accelerated terminal | [ghostty.org](https://ghostty.org/) |
 
-## Supported Platforms
-
-| Platform | Package Manager |
-|----------|-----------------|
-| macOS | Homebrew |
-| Ubuntu/Debian | apt |
-| Fedora | dnf |
-
 ## What It Configures
 
-### ~/.zshrc
+### Shell (~/.zshrc)
+
 - Sets Powerlevel10k as the theme
 - Enables plugins: `git`, `zsh-autosuggestions`, `zsh-syntax-highlighting`
 - Initializes zoxide (replaces `cd` command)
 - Initializes thefuck
 - Initializes fzf keybindings and completion
-- Aliases `cat` to `bat` for syntax-highlighted file viewing
 - Sets `HIST_STAMPS` for history timestamps (epoch + ISO date + time with timezone)
-- Removes Oh My Zsh git aliases that conflict with GAM (Google Workspace Admin)
-- Adds GAM alias if GAMADV-XTD3 is installed in `~/bin/gamadv-xtd3`
 - Adds Homebrew to PATH (macOS)
 - Adds `~/.local/bin` to PATH
 
-### Ghostty Terminal
-- Font: `MesloLGS NF`
-- Background: `#0d0d0d` (dark black)
-- Foreground: `#bd93f9` (Dracula purple)
-
-Config location:
-- macOS: `~/Library/Application Support/com.mitchellh.ghostty/config`
-- Linux: `~/.config/ghostty/config`
-
-### Konsole (Linux only)
-Creates a `p10k` profile with Meslo fonts if Konsole is detected.
-
-## Aliases
+### Aliases
 
 | Alias | Command | Platform |
 |-------|---------|----------|
@@ -102,12 +85,11 @@ Creates a `p10k` profile with Meslo fonts if Konsole is detected.
 | `fd` | `fdfind` | Ubuntu/Debian only* |
 | `pip` | `python3 -m pip` | All |
 | `python` | `python3` | All |
-| `ip` | `ifconfig` | macOS |
-| `gam` | `$HOME/bin/gamadv-xtd3/gam` | All (if installed) |
+| `ip` | `ifconfig` | macOS only |
 
-*On Ubuntu/Debian, `fd` is packaged as `fd-find` and the binary is `fdfind`. The alias normalizes this.
+\*On Ubuntu/Debian, `fd` is packaged as `fd-find` and the binary is `fdfind`. The alias normalizes this.
 
-## Keyboard Shortcuts (fzf)
+### Keyboard Shortcuts (fzf)
 
 | Shortcut | Action |
 |----------|--------|
@@ -115,13 +97,25 @@ Creates a `p10k` profile with Meslo fonts if Konsole is detected.
 | `Ctrl+T` | Fuzzy find files in current directory |
 | `Alt+C` | Fuzzy find and cd into directory |
 
-## Features
+### Ghostty
 
-- **Idempotent**: Skips already-installed components
-- **Error handling**: Tracks and reports failures
-- **Color-coded output**: Easy to read progress and summary
-- **Cleanup**: Removes temporary `.bak` files after sed operations
+- Font: `MesloLGS NF`
+- Background: `#0d0d0d` (dark black)
+- Foreground: `#bd93f9` (Dracula purple)
+- Config: `~/Library/Application Support/com.mitchellh.ghostty/config` (macOS) or `~/.config/ghostty/config` (Linux)
 
-## Ghostty Installation
+For alternative installation methods, see the [official Ghostty docs](https://ghostty.org/docs/install/binary).
 
-For platforms not listed above or alternative installation methods, see the official Ghostty docs: [ghostty.org/docs/install/binary](https://ghostty.org/docs/install/binary)
+### Konsole (Linux only)
+
+Creates a `p10k` profile with Meslo fonts if Konsole is detected.
+
+## Options
+
+### `--gam`
+
+```bash
+./zsh-config.sh --gam
+```
+
+For Google Workspace admins: removes Oh My Zsh git aliases that conflict with GAMADV-XTD3 (`gam`, `gama`, `gamc`, `gams`, `gamscp`) and adds a `gam` alias pointing to `~/bin/gamadv-xtd3/gam`. The alias is added even if GAMADV-XTD3 isn't installed yet.

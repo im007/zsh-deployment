@@ -18,6 +18,16 @@ SKIPPED=()
 CONFIGURED=()
 FAILED=()
 
+# Options
+ENABLE_GAM=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --gam) ENABLE_GAM=true; shift ;;
+    *) echo "Unknown option: $1" >&2; exit 1 ;;
+  esac
+done
+
 # Logging functions
 log_info() {
   echo -e "${BLUE}[INFO]${NC} $1"
@@ -747,29 +757,31 @@ if [ "$OS" = "macos" ]; then
   fi
 fi
 
-# GAM (Google Workspace Admin) - remove conflicting Oh My Zsh git aliases
-if ! grep -q 'unalias gam' ~/.zshrc; then
-  log_info "Adding GAM alias conflict resolution..."
-  echo "" >> ~/.zshrc
-  echo "# Remove git am aliases that conflict with GAM (Google Workspace Admin)" >> ~/.zshrc
-  echo 'unalias gam gama gamc gams gamscp 2>/dev/null' >> ~/.zshrc
-  CONFIGURED+=("GAM alias conflict resolution")
-else
-  log_skip "GAM alias conflict resolution already configured"
-fi
+# GAM (Google Workspace Admin) - only when --gam flag is passed
+if [ "$ENABLE_GAM" = true ]; then
+  # Remove conflicting Oh My Zsh git aliases
+  if ! grep -q 'unalias gam' ~/.zshrc; then
+    log_info "Adding GAM alias conflict resolution..."
+    echo "" >> ~/.zshrc
+    echo "# Remove git am aliases that conflict with GAM (Google Workspace Admin)" >> ~/.zshrc
+    echo 'unalias gam gama gamc gams gamscp 2>/dev/null' >> ~/.zshrc
+    CONFIGURED+=("GAM alias conflict resolution")
+  else
+    log_skip "GAM alias conflict resolution already configured"
+  fi
 
-# GAM alias (GAMADV-XTD3)
-if ! grep -q 'alias gam=' ~/.zshrc; then
-  if [ -d "$HOME/bin/gamadv-xtd3" ]; then
+  # GAM alias (GAMADV-XTD3)
+  if ! grep -q 'alias gam=' ~/.zshrc; then
     log_info "Adding GAM alias..."
     echo "" >> ~/.zshrc
     echo 'alias gam="$HOME/bin/gamadv-xtd3/gam"' >> ~/.zshrc
     CONFIGURED+=("alias gam → GAMADV-XTD3")
+    if [ ! -d "$HOME/bin/gamadv-xtd3" ]; then
+      log_info "GAMADV-XTD3 not found yet — alias will work once installed in ~/bin/gamadv-xtd3"
+    fi
   else
-    log_skip "GAMADV-XTD3 not found in ~/bin/gamadv-xtd3 — skipping alias"
+    log_skip "GAM alias already configured"
   fi
-else
-  log_skip "GAM alias already configured"
 fi
 
 # PATH configuration
