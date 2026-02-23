@@ -63,6 +63,7 @@ After running:
 | tree | Directory listing in tree format | [GitHub](https://github.com/Old-Man-Programmer/tree) |
 | ShellCheck | Shell script static analysis tool | [GitHub](https://github.com/koalaman/shellcheck) |
 | Ghostty | Fast, GPU-accelerated terminal | [ghostty.org](https://ghostty.org/) |
+| GAMADV-XTD3 | Google Workspace admin CLI (optional, `--gam`) | [GitHub](https://github.com/taers232c/GAMADV-XTD3) |
 
 ## What It Configures
 
