@@ -351,10 +351,15 @@ configure_macos_terminal_font() {
     return 0
   fi
 
-  log_info "Configuring Terminal.app to use MesloLGS NF font..."
+  # Check if Terminal.app is already using MesloLGS NF
+  current_font=$(osascript -e 'tell application "Terminal" to get font name of default settings' 2>/dev/null)
+  if [ "$current_font" = "MesloLGS NF" ]; then
+    log_skip "Terminal.app font already set to MesloLGS NF"
+    SKIPPED+=("Terminal.app font")
+    return 0
+  fi
 
-  # Use osascript to configure Terminal.app default profile font
-  # This sets the font for the "Basic" profile which is the default
+  log_info "Configuring Terminal.app to use MesloLGS NF font..."
   if osascript <<'APPLESCRIPT'
 tell application "Terminal"
     set defaultSettings to default settings
