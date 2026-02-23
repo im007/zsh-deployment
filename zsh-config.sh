@@ -679,17 +679,6 @@ if [ "$OS" = "macos" ]; then
   fi
 fi
 
-# zoxide init
-if ! grep -q 'zoxide init' ~/.zshrc; then
-  log_info "Adding zoxide initialization..."
-  echo "" >> ~/.zshrc
-  echo "# zoxide" >> ~/.zshrc
-  echo 'eval "$(zoxide init --cmd cd zsh)"' >> ~/.zshrc
-  CONFIGURED+=("zoxide init")
-else
-  log_skip "zoxide init already configured"
-fi
-
 # thefuck init
 if ! grep -q 'thefuck --alias' ~/.zshrc; then
   log_info "Adding thefuck initialization..."
@@ -793,7 +782,8 @@ if [ "$ENABLE_GAM" = true ]; then
     SKIPPED+=("GAMADV-XTD3")
   fi
 
-  # Remove conflicting Oh My Zsh git aliases
+  # Remove conflicting Oh My Zsh git aliases, then add GAM alias.
+  # Order matters: unalias first so the alias doesn't get immediately removed.
   if ! grep -q 'unalias gam' ~/.zshrc; then
     log_info "Adding GAM alias conflict resolution..."
     echo "" >> ~/.zshrc
@@ -804,10 +794,8 @@ if [ "$ENABLE_GAM" = true ]; then
     log_skip "GAM alias conflict resolution already configured"
   fi
 
-  # GAM alias (GAMADV-XTD3)
   if ! grep -q 'alias gam=' ~/.zshrc; then
     log_info "Adding GAM alias..."
-    echo "" >> ~/.zshrc
     echo 'alias gam="$HOME/bin/gamadv-xtd3/gam"' >> ~/.zshrc
     CONFIGURED+=("alias gam → GAMADV-XTD3")
   else
@@ -853,6 +841,17 @@ EOL
     echo "DefaultProfile=p10k.profile" >> "$konsole_config"
   fi
   CONFIGURED+=("Konsole p10k profile")
+fi
+
+# zoxide init (must be the last thing appended to .zshrc)
+if ! grep -q 'zoxide init' ~/.zshrc; then
+  log_info "Adding zoxide initialization..."
+  echo "" >> ~/.zshrc
+  echo "# zoxide (must be last)" >> ~/.zshrc
+  echo 'eval "$(zoxide init --cmd cd zsh)"' >> ~/.zshrc
+  CONFIGURED+=("zoxide init")
+else
+  log_skip "zoxide init already configured"
 fi
 
 # -----------------------------------------------------------------------------
