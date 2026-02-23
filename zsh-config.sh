@@ -153,6 +153,24 @@ log_section "Detecting Environment"
 detect_os
 log_info "Detected OS: $OS"
 
+# Accept the Xcode license if needed (macOS only)
+if [ "$OS" = "macos" ]; then
+  if /usr/bin/xcrun clang 2>&1 | grep -q "license"; then
+    log_info "Homebrew and other tools require the Xcode license to be accepted."
+    log_info "This needs sudo. Please enter your password when prompted."
+    log_info "To do this manually instead, run: sudo xcodebuild -license accept"
+    log_info "and then re-run this script."
+    echo ""
+    if sudo xcodebuild -license accept; then
+      log_success "Xcode license accepted"
+      CONFIGURED+=("Xcode license")
+    else
+      log_error "Could not accept the Xcode license. Later steps may fail."
+      FAILED+=("Xcode license")
+    fi
+  fi
+fi
+
 # -----------------------------------------------------------------------------
 log_section "Checking Network Connectivity"
 # -----------------------------------------------------------------------------
@@ -759,6 +777,22 @@ fi
 
 # GAM (Google Workspace Admin) - only when --gam flag is passed
 if [ "$ENABLE_GAM" = true ]; then
+  # Install GAMADV-XTD3 if not already present
+  if [ ! -d "$HOME/bin/gamadv-xtd3" ]; then
+    log_info "Installing GAMADV-XTD3..."
+    if bash <(curl -s -S -L https://raw.githubusercontent.com/taers232c/GAMADV-XTD3/master/src/gam-install.sh) -d "$HOME/bin"; then
+      log_success "GAMADV-XTD3 installed to ~/bin/gamadv-xtd3"
+      INSTALLED+=("GAMADV-XTD3")
+    else
+      log_error "GAMADV-XTD3 installation failed"
+      log_info "Install manually: https://github.com/taers232c/GAMADV-XTD3/wiki"
+      FAILED+=("GAMADV-XTD3")
+    fi
+  else
+    log_skip "GAMADV-XTD3 already installed"
+    SKIPPED+=("GAMADV-XTD3")
+  fi
+
   # Remove conflicting Oh My Zsh git aliases
   if ! grep -q 'unalias gam' ~/.zshrc; then
     log_info "Adding GAM alias conflict resolution..."
@@ -776,9 +810,6 @@ if [ "$ENABLE_GAM" = true ]; then
     echo "" >> ~/.zshrc
     echo 'alias gam="$HOME/bin/gamadv-xtd3/gam"' >> ~/.zshrc
     CONFIGURED+=("alias gam → GAMADV-XTD3")
-    if [ ! -d "$HOME/bin/gamadv-xtd3" ]; then
-      log_info "GAMADV-XTD3 not found yet — alias will work once installed in ~/bin/gamadv-xtd3"
-    fi
   else
     log_skip "GAM alias already configured"
   fi

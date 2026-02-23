@@ -8,17 +8,18 @@ Idempotent — skips what's already installed, so you can re-run it to pick up n
 
 **Go from a bare terminal to a fully-featured, beautiful shell environment in under 5 minutes.**
 
-- **Instant prompt** — Powerlevel10k displays immediately while background processes load
-- **Smart autocompletion** — Suggestions based on your command history as you type
-- **Syntax highlighting** — See command errors before you hit enter
-- **Smarter navigation** — `cd` learns your most-used directories and jumps to them with partial matches
-- **Typo correction** — Made a mistake? Type `fuck` and it fixes your last command
-- **Better file viewing** — `cat` now has syntax highlighting courtesy of bat
-  - Tip: `cat -p` for plain output (closer to traditional cat)
-- **Fuzzy finding** — `Ctrl+R` for history, `Ctrl+T` for files, `Alt+C` for directories
-- **Fast file search** — `fd` is a modern, user-friendly alternative to `find`
-- **Beautiful terminal** — Ghostty with a sleek dark theme and proper font rendering
-- **Cross-platform** — Works on macOS, Ubuntu, Debian, and Fedora with OS-appropriate installers
+| Feature | Description |
+|---------|-------------|
+| Instant prompt | Powerlevel10k displays immediately while background processes load |
+| Smart autocompletion | Suggestions based on your command history as you type |
+| Syntax highlighting | See command errors before you hit enter |
+| Smarter navigation | `cd` learns your most-used directories and jumps to them with partial matches |
+| Typo correction | Made a mistake? Type `fuck` and it fixes your last command |
+| Better file viewing | `cat` now has syntax highlighting courtesy of bat. Tip: `cat -p` for plain output |
+| Fuzzy finding | `Ctrl+R` for history, `Ctrl+T` for files, `Alt+C` for directories |
+| Fast file search | `fd` is a modern, user-friendly alternative to `find` |
+| Beautiful terminal | Ghostty with a sleek dark theme and proper font rendering |
+| Cross-platform | Works on macOS, Ubuntu, Debian, and Fedora with OS-appropriate installers |
 
 ## Quick Start
 
@@ -118,4 +119,4 @@ Creates a `p10k` profile with Meslo fonts if Konsole is detected.
 ./zsh-config.sh --gam
 ```
 
-For Google Workspace admins: removes Oh My Zsh git aliases that conflict with GAMADV-XTD3 (`gam`, `gama`, `gamc`, `gams`, `gamscp`) and adds a `gam` alias pointing to `~/bin/gamadv-xtd3/gam`. The alias is added even if GAMADV-XTD3 isn't installed yet.
+For Google Workspace admins: installs [GAMADV-XTD3](https://github.com/taers232c/GAMADV-XTD3) to `~/bin/gamadv-xtd3` if not already present, removes Oh My Zsh git aliases that conflict with it (`gam`, `gama`, `gamc`, `gams`, `gamscp`), and adds a `gam` alias pointing to `~/bin/gamadv-xtd3/gam`.
