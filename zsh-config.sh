@@ -659,9 +659,10 @@ log_section "Configuring .zshrc"
 # -----------------------------------------------------------------------------
 
 # History timestamp format (epoch, ISO date, time with timezone)
-if ! grep -q 'HIST_STAMPS=' ~/.zshrc; then
+if ! grep -q '^HIST_STAMPS=' ~/.zshrc; then
   log_info "Adding history timestamp format..."
-  sed -i.bak 's/# HIST_STAMPS="mm\/dd\/yyyy"/HIST_STAMPS="%s %F %R-%Z "/' ~/.zshrc
+  sed -i.bak '/^# HIST_STAMPS=/a\
+HIST_STAMPS="%s %F %R-%Z "' ~/.zshrc
   CONFIGURED+=("HIST_STAMPS → epoch + ISO date + time")
 else
   log_skip "HIST_STAMPS already configured"
