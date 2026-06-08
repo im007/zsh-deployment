@@ -1,5 +1,7 @@
 # Zsh Configuration Script
 
+[![CI](https://github.com/im007/zsh-deployment/actions/workflows/ci.yml/badge.svg)](https://github.com/im007/zsh-deployment/actions/workflows/ci.yml)
+
 Automated setup for Zsh with Oh My Zsh, Powerlevel10k, and useful tools.
 
 Idempotent — skips what's already installed, so you can re-run it to pick up new additions.
@@ -121,3 +123,14 @@ Creates a `p10k` profile with Meslo fonts if Konsole is detected.
 ```
 
 For Google Workspace admins: installs [GAMADV-XTD3](https://github.com/taers232c/GAMADV-XTD3) to `~/bin/gamadv-xtd3` if not already present, removes Oh My Zsh git aliases that conflict with it (`gam`, `gama`, `gamc`, `gams`, `gamscp`), and adds a `gam` alias pointing to `~/bin/gamadv-xtd3/gam`.
+
+## Development
+
+CI (`.github/workflows/ci.yml`) runs ShellCheck and the idempotency tests on every push and pull request. To run the same checks locally:
+
+```bash
+shellcheck zsh-config.sh tests/*.sh   # lint (config in .shellcheckrc)
+bash tests/test_zoxide_init.sh        # idempotency tests
+```
+
+`tests/test_zoxide_init.sh` extracts the real zoxide step from `zsh-config.sh` and runs it against fixtures (no zoxide, already-correct, stranded mid-file, duplicates), asserting that the init line always ends up as the single last line and that already-correct files are left untouched. Linting exclusions are documented with rationale in `.shellcheckrc`.

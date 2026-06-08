@@ -1,0 +1,17 @@
+# ShellCheck config for zsh-deployment.
+# Each exclusion below is a deliberate, reviewed choice — not noise we gave up on.
+
+# SC2016: $(...) / $var inside single quotes do not expand. INTENTIONAL here: we
+# write literal init lines (e.g. eval "$(zoxide init --cmd cd zsh)") into ~/.zshrc;
+# they must be stored verbatim and expanded by the user's shell, not by this script.
+disable=SC2016
+
+# SC1091: "Not following: <file> was not specified as input". The files we source
+# (~/.zshrc, oh-my-zsh.sh, ~/.p10k.zsh, /etc/os-release) only exist at runtime on the
+# target machine, so ShellCheck cannot follow them during static linting.
+disable=SC1091
+
+# SC2129: prefers '{ cmd1; cmd2; } >> file' over repeated '>> file' lines. The
+# per-line appends are a deliberate readability/diff-friendliness choice for the
+# blocks this script writes into ~/.zshrc.
+disable=SC2129
