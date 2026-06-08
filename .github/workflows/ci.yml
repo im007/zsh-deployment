@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        # Pinned to a commit SHA (v4.2.2) rather than a mutable tag.
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Show ShellCheck version
+        run: shellcheck --version
+
+      - name: ShellCheck (installer + tests)
+        run: shellcheck zsh-config.sh tests/*.sh
+
+      - name: Idempotency tests
+        run: bash tests/test_zoxide_init.sh
