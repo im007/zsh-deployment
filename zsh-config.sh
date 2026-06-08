@@ -849,15 +849,32 @@ EOL
   CONFIGURED+=("Konsole p10k profile")
 fi
 
-# zoxide init (must be the last thing appended to .zshrc)
+# zoxide init MUST be the last line so it captures the final $PATH; otherwise its
+# _ZO_DOCTOR check warns on every shell start. Move it to the end if a prior run or
+# pipx/brew/manual edit left it stranded mid-file. Position-aware = idempotent.
+zoxide_marker="# zoxide (must be last)"
+zoxide_init='eval "$(zoxide init --cmd cd zsh)"'
+
 if ! grep -q 'zoxide init' ~/.zshrc; then
   log_info "Adding zoxide initialization..."
   echo "" >> ~/.zshrc
-  echo "# zoxide (must be last)" >> ~/.zshrc
-  echo 'eval "$(zoxide init --cmd cd zsh)"' >> ~/.zshrc
+  echo "$zoxide_marker" >> ~/.zshrc
+  echo "$zoxide_init" >> ~/.zshrc
   CONFIGURED+=("zoxide init")
+elif grep -vE '^[[:space:]]*$' ~/.zshrc | tail -n 1 | grep -q 'zoxide init'; then
+  log_skip "zoxide init already last in ~/.zshrc"
 else
-  log_skip "zoxide init already configured"
+  log_info "Repositioning zoxide init to end of ~/.zshrc (was stranded mid-file)..."
+  # Read from the .bak copy and write back to ~/.zshrc so the '>' truncation can
+  # never race the read. The .bak is removed by the Cleanup section below.
+  cp ~/.zshrc ~/.zshrc.bak
+  # Drop every existing zoxide init line and our managed marker, then re-append a
+  # single clean block at the very end.
+  grep -vE 'zoxide init|^# zoxide \(must be last\)$' ~/.zshrc.bak > ~/.zshrc
+  echo "" >> ~/.zshrc
+  echo "$zoxide_marker" >> ~/.zshrc
+  echo "$zoxide_init" >> ~/.zshrc
+  CONFIGURED+=("zoxide init repositioned to end")
 fi
 
 # -----------------------------------------------------------------------------
