@@ -849,6 +849,24 @@ EOL
   CONFIGURED+=("Konsole p10k profile")
 fi
 
+# Silence zoxide's _ZO_DOCTOR doctor warning inside Claude Code ONLY. Claude's
+# Bash tool rebuilds the shell from a snapshot that captures zoxide's functions
+# but NOT its chpwd/precmd hook registration, so the doctor false-positives on
+# every `cd` (a different failure mode from the $PATH-after-init case the block
+# below addresses, and one that position-fixing cannot cure). Gating on
+# $CLAUDECODE keeps the useful doctor active in normal interactive shells and
+# makes the line inert on machines without Claude Code. Must run BEFORE the
+# zoxide init block so a freshly-appended guard gets repositioned ahead of the
+# (must-be-last) init within the same run.
+if ! grep -qF '_ZO_DOCTOR=0' ~/.zshrc; then
+  log_info "Adding Claude-only zoxide _ZO_DOCTOR guard..."
+  echo "" >> ~/.zshrc
+  echo '[[ -n "$CLAUDECODE" ]] && export _ZO_DOCTOR=0  # Claude snapshot: silence zoxide doctor false-positive' >> ~/.zshrc
+  CONFIGURED+=("zoxide _ZO_DOCTOR guard")
+else
+  log_skip "zoxide _ZO_DOCTOR guard already present in ~/.zshrc"
+fi
+
 # zoxide init MUST be the last line so it captures the final $PATH; otherwise its
 # _ZO_DOCTOR check warns on every shell start. Move it to the end if a prior run or
 # pipx/brew/manual edit left it stranded mid-file. Position-aware = idempotent.
