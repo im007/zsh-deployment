@@ -24,3 +24,7 @@ jobs:
 
       - name: Idempotency tests
         run: bash tests/test_zoxide_init.sh
+
+      - name: zoxide _ZO_DOCTOR fix tests
+        # jq is preinstalled on ubuntu-latest; the test self-skips if it is absent.
+        run: bash tests/test_zo_doctor_guard.sh

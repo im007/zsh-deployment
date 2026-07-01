@@ -73,7 +73,8 @@ After running:
 
 - Sets Powerlevel10k as the theme
 - Enables plugins: `git`, `zsh-autosuggestions`, `zsh-syntax-highlighting`
-- Initializes zoxide (replaces `cd` command)
+- Initializes zoxide (replaces `cd` command); keeps `zoxide init` as the last line so its doctor stays quiet
+- Silences zoxide's `_ZO_DOCTOR` false-positive under Claude Code by setting `_ZO_DOCTOR=0` in `~/.claude/settings.json` `env` (see Development notes)
 - Initializes thefuck
 - Initializes fzf keybindings and completion
 - Sets `HIST_STAMPS` for history timestamps (epoch + ISO date + time with timezone)
@@ -130,7 +131,14 @@ CI (`.github/workflows/ci.yml`) runs ShellCheck and the idempotency tests on eve
 
 ```bash
 shellcheck zsh-config.sh tests/*.sh   # lint (config in .shellcheckrc)
-bash tests/test_zoxide_init.sh        # idempotency tests
+bash tests/test_zoxide_init.sh        # zoxide init idempotency tests
+bash tests/test_zo_doctor_guard.sh    # zoxide _ZO_DOCTOR fix tests (needs jq)
 ```
 
 `tests/test_zoxide_init.sh` extracts the real zoxide step from `zsh-config.sh` and runs it against fixtures (no zoxide, already-correct, stranded mid-file, duplicates), asserting that the init line always ends up as the single last line and that already-correct files are left untouched. Linting exclusions are documented with rationale in `.shellcheckrc`.
+
+### zoxide `_ZO_DOCTOR` under Claude Code
+
+zoxide's doctor prints `zoxide: detected a possible configuration issue.` on every `cd`. In a normal terminal that means the `zoxide init` line isn't last — the installer fixes that (position-aware self-heal). Inside **Claude Code** it's a false positive: Claude's Bash tool replays a shell snapshot that serializes functions and aliases but does **not** register zoxide's `chpwd` hook — nor does it carry top-level env-var `export`s from `~/.zshrc`. So the doctor fires on every tool call.
+
+The fix must set `_ZO_DOCTOR=0` in the *tool environment*, not the rc file. The installer does this by adding `_ZO_DOCTOR=0` to the `env` block of `~/.claude/settings.json` (via `jq`, idempotent), which Claude injects into every Bash subprocess. This is snapshot-independent and Claude-scoped, so the useful doctor stays active in your interactive terminal. If a prior installer version appended a (never-effective) `$CLAUDECODE`-gated `export _ZO_DOCTOR=0` to `~/.zshrc`, the installer removes it on next run. `tests/test_zo_doctor_guard.sh` extracts both blocks from `zsh-config.sh` and verifies the settings-fix (add / preserve-other-keys / idempotent / missing-file-safe) and the rc-cleanup.
