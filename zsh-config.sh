@@ -849,23 +849,53 @@ EOL
   CONFIGURED+=("Konsole p10k profile")
 fi
 
-# Silence zoxide's _ZO_DOCTOR doctor warning inside Claude Code ONLY. Claude's
-# Bash tool rebuilds the shell from a snapshot that captures zoxide's functions
-# but NOT its chpwd/precmd hook registration, so the doctor false-positives on
-# every `cd` (a different failure mode from the $PATH-after-init case the block
-# below addresses, and one that position-fixing cannot cure). Gating on
-# $CLAUDECODE keeps the useful doctor active in normal interactive shells and
-# makes the line inert on machines without Claude Code. Must run BEFORE the
-# zoxide init block so a freshly-appended guard gets repositioned ahead of the
-# (must-be-last) init within the same run.
-if ! grep -qF '_ZO_DOCTOR=0' ~/.zshrc; then
-  log_info "Adding Claude-only zoxide _ZO_DOCTOR guard..."
-  echo "" >> ~/.zshrc
-  echo '[[ -n "$CLAUDECODE" ]] && export _ZO_DOCTOR=0  # Claude snapshot: silence zoxide doctor false-positive' >> ~/.zshrc
-  CONFIGURED+=("zoxide _ZO_DOCTOR guard")
-else
-  log_skip "zoxide _ZO_DOCTOR guard already present in ~/.zshrc"
+# Silence zoxide's _ZO_DOCTOR doctor warning inside Claude Code.
+#
+# Claude's Bash tool rebuilds the shell from a snapshot that serializes functions
+# and aliases but NOT top-level env-var exports from ~/.zshrc, and does not
+# register zoxide's chpwd hook -- so the doctor false-positives on every `cd`
+# inside Claude (a different failure mode from the $PATH-after-init case the block
+# below cures, and one that position-fixing cannot).
+#
+# The fix must set _ZO_DOCTOR=0 in the *tool environment*. A $CLAUDECODE-gated
+# export in ~/.zshrc does NOT work: the snapshot discards top-level rc exports, so
+# the tool shell never sees the variable (verified 2026-06-30). The reliable place
+# is ~/.claude/settings.json "env", which Claude injects into every tool
+# subprocess -- snapshot-independent, and Claude-scoped so the interactive shell's
+# useful doctor stays active. Vault: "zoxide - Silencing the _ZO_DOCTOR Warning in
+# Claude Code".
+
+# >>> zodoctor-rc-cleanup >>>
+# One-time self-heal: strip the ineffective guard a prior kit version appended.
+if grep -qF '[[ -n "$CLAUDECODE" ]] && export _ZO_DOCTOR=0' ~/.zshrc 2>/dev/null; then
+  log_info "Removing ineffective ~/.zshrc _ZO_DOCTOR guard (superseded by settings.json)..."
+  if grep -vF '[[ -n "$CLAUDECODE" ]] && export _ZO_DOCTOR=0' ~/.zshrc > ~/.zshrc.zodoctor.tmp; then
+    cat ~/.zshrc.zodoctor.tmp > ~/.zshrc
+    CONFIGURED+=("removed dead ~/.zshrc _ZO_DOCTOR guard")
+  fi
+  rm -f ~/.zshrc.zodoctor.tmp
 fi
+# <<< zodoctor-rc-cleanup <<<
+
+# >>> zodoctor-settings-fix >>>
+# Set _ZO_DOCTOR=0 in ~/.claude/settings.json "env" (the working, Claude-scoped fix).
+claude_settings="$HOME/.claude/settings.json"
+if ! command -v jq &> /dev/null; then
+  log_skip "jq not available - skipping zoxide _ZO_DOCTOR settings.json fix"
+elif [ ! -f "$claude_settings" ]; then
+  log_skip "No ~/.claude/settings.json (Claude Code not set up here) - skipping zoxide fix"
+elif [ "$(jq -r '.env._ZO_DOCTOR // empty' "$claude_settings" 2>/dev/null)" = "0" ]; then
+  log_skip "zoxide _ZO_DOCTOR=0 already set in ~/.claude/settings.json"
+elif jq '.env._ZO_DOCTOR = "0"' "$claude_settings" > "$claude_settings.zodoctor.tmp" 2>/dev/null && [ -s "$claude_settings.zodoctor.tmp" ]; then
+  cat "$claude_settings.zodoctor.tmp" > "$claude_settings"
+  rm -f "$claude_settings.zodoctor.tmp"
+  log_info "Set _ZO_DOCTOR=0 in ~/.claude/settings.json (silences zoxide doctor in Claude)"
+  CONFIGURED+=("zoxide _ZO_DOCTOR fix in settings.json")
+else
+  rm -f "$claude_settings.zodoctor.tmp"
+  log_error "Failed to update ~/.claude/settings.json - left unchanged"
+fi
+# <<< zodoctor-settings-fix <<<
 
 # zoxide init MUST be the last line so it captures the final $PATH; otherwise its
 # _ZO_DOCTOR check warns on every shell start. Move it to the end if a prior run or
