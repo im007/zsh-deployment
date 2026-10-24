@@ -16,7 +16,6 @@ Idempotent — skips what's already installed, so you can re-run it to pick up n
 | Smart autocompletion | Suggestions based on your command history as you type |
 | Syntax highlighting | See command errors before you hit enter |
 | Smarter navigation | `cd` learns your most-used directories and jumps to them with partial matches |
-| Typo correction | Made a mistake? Type `fuck` and it fixes your last command (macOS and Fedora) |
 | Better file viewing | `cat` now has syntax highlighting courtesy of bat. Tip: `cat -p` for plain output |
 | Fuzzy finding | `Ctrl+R` for history, `Ctrl+T` for files, `Alt+C` for directories |
 | Fast file search | `fd` is a modern, user-friendly alternative to `find` |
@@ -57,7 +56,6 @@ After running:
 | zsh-autosuggestions | Fish-like command suggestions | [GitHub](https://github.com/zsh-users/zsh-autosuggestions) |
 | zsh-syntax-highlighting | Syntax highlighting for commands | [GitHub](https://github.com/zsh-users/zsh-syntax-highlighting) |
 | zoxide | Smarter `cd` that learns your habits | [GitHub](https://github.com/ajeetdsouza/zoxide) |
-| thefuck | Corrects your previous command. Not installed on Ubuntu/Debian* | [GitHub](https://github.com/nvbn/thefuck) |
 | fd | Fast, user-friendly `find` replacement | [GitHub](https://github.com/sharkdp/fd) |
 | bat | `cat` with syntax highlighting | [GitHub](https://github.com/sharkdp/bat) |
 | fzf | Fuzzy finder for files, history, and more | [GitHub](https://github.com/junegunn/fzf) |
@@ -67,8 +65,6 @@ After running:
 | Ghostty | Fast, GPU-accelerated terminal | [ghostty.org](https://ghostty.org/) |
 | GAMADV-XTD3 | Google Workspace admin CLI (optional, `--gam`) | [GitHub](https://github.com/taers232c/GAMADV-XTD3) |
 
-\*The Ubuntu/Debian `thefuck` package crashes on Python 3.12+ (Ubuntu 24.04 and later) because it imports the removed `distutils` and `imp` modules, and upstream has had no release since 2022. If an earlier run installed it, remove it with `sudo apt remove thefuck`.
-
 ## What It Configures
 
 ### Shell (~/.zshrc)
@@ -77,9 +73,8 @@ After running:
 - Enables plugins: `git`, `zsh-autosuggestions`, `zsh-syntax-highlighting`
 - Initializes zoxide (replaces `cd` command); keeps `zoxide init` as the last line so its doctor stays quiet
 - Silences zoxide's `_ZO_DOCTOR` false-positive under Claude Code by setting `_ZO_DOCTOR=0` in `~/.claude/settings.json` `env` (see Development notes)
-- Initializes thefuck when it is installed and working (silent otherwise)
-- Initializes fzf keybindings and completion; on fzf older than 0.48 (Ubuntu 24.04 ships 0.44), which has no `fzf --zsh`, it sources the packaged scripts in `/usr/share/doc/fzf/examples/` instead
-- Rewrites the thefuck and fzf init lines that earlier versions wrote, which printed errors on every shell start on Ubuntu 24.04
+- Initializes fzf keybindings and completion; on fzf older than 0.48 (Ubuntu 24.04 ships 0.44), which has no `fzf --zsh`, it sources the packaged scripts in `/usr/share/doc/fzf/examples/` instead, and rewrites the `--zsh`-only init that earlier versions wrote
+- Removes the thefuck init line that earlier versions wrote. thefuck is no longer installed: upstream has had no release since 2022 and it crashes on Python 3.12+ unless the package manager patches it. The script prints the uninstall command if thefuck is still present
 - Sets `HIST_STAMPS` for history timestamps (epoch + ISO date + time with timezone)
 - Adds Homebrew to PATH (macOS)
 - Adds `~/.local/bin` to PATH
@@ -136,7 +131,7 @@ CI (`.github/workflows/ci.yml`) runs ShellCheck and the idempotency tests on eve
 shellcheck zsh-config.sh tests/*.sh   # lint (config in .shellcheckrc)
 bash tests/test_zoxide_init.sh        # zoxide init idempotency tests
 bash tests/test_zo_doctor_guard.sh    # zoxide _ZO_DOCTOR fix tests (needs jq)
-bash tests/test_shell_init_heal.sh    # thefuck / fzf init tests
+bash tests/test_shell_init_heal.sh    # thefuck cleanup + fzf init tests
 ```
 
 `tests/test_zoxide_init.sh` extracts the real zoxide step from `zsh-config.sh` and runs it against fixtures (no zoxide, already-correct, stranded mid-file, duplicates), asserting that the init line always ends up as the single last line and that already-correct files are left untouched. Linting exclusions are documented with rationale in `.shellcheckrc`.

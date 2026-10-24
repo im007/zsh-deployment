@@ -454,29 +454,18 @@ else
   SKIPPED+=("zoxide")
 fi
 
-# thefuck
-# Not installed on Ubuntu/Debian: the apt package (3.29) crashes on Python 3.12+
-# because it imports the removed distutils and imp modules, and upstream has had
-# no release since 2022 (master is still broken).
-case $OS in
-  "ubuntu"|"debian")
-    if command -v thefuck &> /dev/null && ! thefuck --version &> /dev/null; then
-      log_info "Found a broken thefuck install. Remove it with: sudo apt remove thefuck"
-    fi
-    log_skip "thefuck not installed on $OS (broken on Python 3.12+)"
-    SKIPPED+=("thefuck (broken on Python 3.12+)")
-    ;;
-  *)
-    if ! command -v thefuck &> /dev/null; then
-      log_info "Installing thefuck..."
-      install_package thefuck
-      INSTALLED+=("thefuck")
-    else
-      log_skip "thefuck already installed"
-      SKIPPED+=("thefuck")
-    fi
-    ;;
-esac
+# thefuck is no longer installed: upstream has had no release since 2022, and it
+# crashes on Python 3.12+ (removed distutils and imp modules) unless the package
+# manager patches it, as Ubuntu 24.04's apt package does not. Earlier versions
+# installed it, so point at the uninstall command; packages are left in place.
+if command -v thefuck &> /dev/null; then
+  case $OS in
+    "macos") thefuck_uninstall="brew uninstall thefuck" ;;
+    "fedora") thefuck_uninstall="sudo dnf remove thefuck" ;;
+    *) thefuck_uninstall="sudo apt remove thefuck" ;;
+  esac
+  log_info "thefuck is no longer part of this setup. Remove it with: $thefuck_uninstall"
+fi
 
 # fd (find replacement)
 # Note: package name varies by OS
@@ -699,30 +688,32 @@ if [ "$OS" = "macos" ]; then
   fi
 fi
 
-# >>> thefuck-init >>>
-# Guarded so a missing or broken thefuck stays silent instead of printing a
-# traceback on every shell start. Earlier versions wrote the bare eval line;
-# rewrite it in place.
-thefuck_old='eval "$(thefuck --alias)"'
-thefuck_block='if command -v thefuck &> /dev/null; then
-  eval "$(thefuck --alias 2>/dev/null)"
-fi'
-if ! grep -q 'thefuck --alias' ~/.zshrc; then
-  log_info "Adding thefuck initialization..."
-  echo "" >> ~/.zshrc
-  echo "# thefuck" >> ~/.zshrc
-  echo "$thefuck_block" >> ~/.zshrc
-  CONFIGURED+=("thefuck alias")
-elif grep -qxF "$thefuck_old" ~/.zshrc; then
-  log_info "Guarding thefuck initialization..."
-  OLD="$thefuck_old" NEW="$thefuck_block" awk '$0 == ENVIRON["OLD"] { print ENVIRON["NEW"]; next } { print }' ~/.zshrc > ~/.zshrc.thefuck.tmp \
+# >>> thefuck-rc-cleanup >>>
+# One-time self-heal: strip the thefuck init line earlier versions wrote (it
+# printed a traceback on every shell start wherever thefuck was broken), plus
+# its "# thefuck" comment and the blank line before it.
+thefuck_init='eval "$(thefuck --alias)"'
+if grep -qxF "$thefuck_init" ~/.zshrc; then
+  log_info "Removing thefuck initialization from ~/.zshrc..."
+  INIT="$thefuck_init" awk '
+    { line[NR] = $0 }
+    END {
+      n = 0
+      for (i = 1; i <= NR; i++) {
+        if (line[i] == "# thefuck" && line[i+1] == ENVIRON["INIT"]) {
+          if (n > 0 && out[n] == "") n--
+          i++
+        } else if (line[i] != ENVIRON["INIT"]) {
+          out[++n] = line[i]
+        }
+      }
+      for (i = 1; i <= n; i++) print out[i]
+    }' ~/.zshrc > ~/.zshrc.thefuck.tmp \
     && cat ~/.zshrc.thefuck.tmp > ~/.zshrc
   rm -f ~/.zshrc.thefuck.tmp
-  CONFIGURED+=("thefuck init guarded")
-else
-  log_skip "thefuck alias already configured"
+  CONFIGURED+=("removed thefuck init from ~/.zshrc")
 fi
-# <<< thefuck-init <<<
+# <<< thefuck-rc-cleanup <<<
 
 # >>> fzf-init >>>
 # fzf < 0.48 (Ubuntu 24.04 ships 0.44) has no --zsh flag; fall back to the
