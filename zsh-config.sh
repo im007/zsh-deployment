@@ -454,14 +454,17 @@ else
   SKIPPED+=("zoxide")
 fi
 
-# thefuck
-if ! command -v thefuck &> /dev/null; then
-  log_info "Installing thefuck..."
-  install_package thefuck
-  INSTALLED+=("thefuck")
-else
-  log_skip "thefuck already installed"
-  SKIPPED+=("thefuck")
+# thefuck is no longer installed: upstream has had no release since 2022, and it
+# crashes on Python 3.12+ (removed distutils and imp modules) unless the package
+# manager patches it, as Ubuntu 24.04's apt package does not. Earlier versions
+# installed it, so point at the uninstall command; packages are left in place.
+if command -v thefuck &> /dev/null; then
+  case $OS in
+    "macos") thefuck_uninstall="brew uninstall thefuck" ;;
+    "fedora") thefuck_uninstall="sudo dnf remove thefuck" ;;
+    *) thefuck_uninstall="sudo apt remove thefuck" ;;
+  esac
+  log_info "thefuck is no longer part of this setup. Remove it with: $thefuck_uninstall"
 fi
 
 # fd (find replacement)
@@ -685,29 +688,79 @@ if [ "$OS" = "macos" ]; then
   fi
 fi
 
-# thefuck init
-if ! grep -q 'thefuck --alias' ~/.zshrc; then
-  log_info "Adding thefuck initialization..."
-  echo "" >> ~/.zshrc
-  echo "# thefuck" >> ~/.zshrc
-  echo 'eval "$(thefuck --alias)"' >> ~/.zshrc
-  CONFIGURED+=("thefuck alias")
-else
-  log_skip "thefuck alias already configured"
+# >>> thefuck-rc-cleanup >>>
+# One-time self-heal: strip the thefuck init line earlier versions wrote (it
+# printed a traceback on every shell start wherever thefuck was broken), plus
+# its "# thefuck" comment and the blank line before it.
+thefuck_init='eval "$(thefuck --alias)"'
+if grep -qxF "$thefuck_init" ~/.zshrc; then
+  log_info "Removing thefuck initialization from ~/.zshrc..."
+  INIT="$thefuck_init" awk '
+    { line[NR] = $0 }
+    END {
+      n = 0
+      for (i = 1; i <= NR; i++) {
+        if (line[i] == "# thefuck" && line[i+1] == ENVIRON["INIT"]) {
+          if (n > 0 && out[n] == "") n--
+          i++
+        } else if (line[i] != ENVIRON["INIT"]) {
+          out[++n] = line[i]
+        }
+      }
+      for (i = 1; i <= n; i++) print out[i]
+    }' ~/.zshrc > ~/.zshrc.thefuck.tmp \
+    && cat ~/.zshrc.thefuck.tmp > ~/.zshrc
+  rm -f ~/.zshrc.thefuck.tmp
+  CONFIGURED+=("removed thefuck init from ~/.zshrc")
 fi
+# <<< thefuck-rc-cleanup <<<
 
-# fzf init
+# >>> fzf-init >>>
+# fzf < 0.48 (Ubuntu 24.04 ships 0.44) has no --zsh flag; fall back to the
+# scripts the Debian/Ubuntu package installs. Earlier versions wrote a
+# --zsh-only block; rewrite it in place.
+fzf_old_if='if command -v fzf &> /dev/null; then'
+fzf_old_eval='  eval "$(fzf --zsh)"'
+fzf_block='if command -v fzf &> /dev/null; then
+  if fzf_init="$(fzf --zsh 2>/dev/null)"; then
+    eval "$fzf_init"
+  elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
+    source /usr/share/doc/fzf/examples/key-bindings.zsh
+    source /usr/share/doc/fzf/examples/completion.zsh
+  fi
+  unset fzf_init
+fi'
 if ! grep -q 'fzf --zsh' ~/.zshrc && ! grep -q 'fzf.zsh' ~/.zshrc; then
   log_info "Adding fzf initialization..."
   echo "" >> ~/.zshrc
   echo "# fzf" >> ~/.zshrc
-  echo 'if command -v fzf &> /dev/null; then' >> ~/.zshrc
-  echo '  eval "$(fzf --zsh)"' >> ~/.zshrc
-  echo 'fi' >> ~/.zshrc
+  echo "$fzf_block" >> ~/.zshrc
   CONFIGURED+=("fzf init")
+elif grep -qxF "$fzf_old_eval" ~/.zshrc; then
+  log_info "Updating fzf initialization for older fzf versions..."
+  OLD_IF="$fzf_old_if" OLD_EVAL="$fzf_old_eval" NEW="$fzf_block" awk '
+    { line[NR] = $0 }
+    END {
+      for (i = 1; i <= NR; i++) {
+        if (line[i] == ENVIRON["OLD_IF"] && line[i+1] == ENVIRON["OLD_EVAL"] && line[i+2] == "fi") {
+          print ENVIRON["NEW"]; i += 2
+        } else {
+          print line[i]
+        }
+      }
+    }' ~/.zshrc > ~/.zshrc.fzf.tmp
+  if cmp -s ~/.zshrc ~/.zshrc.fzf.tmp; then
+    log_error "Found the old fzf init but not in the expected form - update it in ~/.zshrc by hand"
+    FAILED+=("fzf init update")
+  else
+    cat ~/.zshrc.fzf.tmp > ~/.zshrc
+    CONFIGURED+=("fzf init updated")
+  fi
+  rm -f ~/.zshrc.fzf.tmp
 else
   log_skip "fzf init already configured"
 fi
+# <<< fzf-init <<<
 
 # bat alias (cat replacement)
 # On Ubuntu/Debian, bat is installed as 'batcat'
